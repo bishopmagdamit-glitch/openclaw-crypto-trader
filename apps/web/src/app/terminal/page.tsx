@@ -10,6 +10,8 @@ type Portfolio = {
 };
 
 type FeedItem = { agent: string; color: string; msg: string; ts: string };
+type Ticker = { ETH: { price: number; changePct: number }; USDC: { price: number; changePct: number } };
+
 type Signals = { fearGreed: number; sentiment: number; funding: number };
 type Position = { asset: string; side: 'LONG' | 'SHORT'; sizeUsd: number; entry: number; pnlUsd: number; pnlPct: number; stopLossPct?: number; confidence?: number };
 
@@ -99,7 +101,7 @@ function Topbar({ status }: { status: Status | null }) {
   );
 }
 
-function Ticker() {
+function Ticker({ ticker }: { ticker: Ticker | null }) {
   return (
     <div style={{ height: 34, background: 'var(--bg1)', borderBottom: `1px solid var(--border)`, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 28, overflow: 'hidden' }}>
       {[
@@ -157,24 +159,26 @@ function MetricCard({ label, value, sub, color }: { label: string; value: string
 }
 
 export default async function Terminal() {
-  const [status, portfolioRes, feedRes, signalsRes, positionsRes] = await Promise.all([
+  const [status, portfolioRes, feedRes, signalsRes, positionsRes, tickerRes] = await Promise.all([
     fetchStatus(),
     fetchJSON('/portfolio'),
     fetchJSON('/feed'),
     fetchJSON('/signals'),
     fetchJSON('/positions'),
+    fetchJSON('/ticker'),
   ]);
 
   const portfolio: Portfolio | null = portfolioRes && portfolioRes.ok ? portfolioRes : null;
   const feed: FeedItem[] = feedRes && feedRes.ok ? (feedRes.items || []) : [];
   const signals: Signals | null = signalsRes && signalsRes.ok ? signalsRes : null;
   const positions: Position[] = positionsRes && positionsRes.ok ? (positionsRes.positions || []) : [];
+  const ticker: Ticker | null = tickerRes && tickerRes.ok ? tickerRes : null;
 
 
   return (
     <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Topbar status={status} />
-      <Ticker />
+      <Ticker ticker={ticker} />
 
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '220px 1fr 280px' }}>
         <aside style={{ background: 'var(--bg1)', borderRight: `1px solid var(--border)`, padding: '16px 0' }}>
@@ -244,7 +248,25 @@ export default async function Terminal() {
             {positions.length === 0 ? (
               <div className="mono" style={{ fontSize: 11, color: 'var(--txt2)' }}>No positions.</div>
             ) : (
-              <div className="mono" style={{ fontSize: 11, color: 'var(--txt)' }}>Positions table next.</div>
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.7fr 0.9fr 0.9fr 0.9fr 0.8fr', gap: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+                  {['ASSET','SIDE','SIZE','ENTRY','P&L','CONF'].map((h) => (
+                    <div key={h} style={{ fontSize: 10, fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--txt3)' }}>{h}</div>
+                  ))}
+                </div>
+                <div style={{ display: 'grid', gap: 0 }}>
+                  {positions.map((p) => (
+                    <div key={p.asset} className="mono" style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.7fr 0.9fr 0.9fr 0.9fr 0.8fr', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
+                      <div>{p.asset}</div>
+                      <div style={{ color: p.side === 'LONG' ? 'var(--green)' : 'var(--red)' }}>{p.side}</div>
+                      <div style={{ textAlign: 'right' }}>${p.sizeUsd.toFixed(0)}</div>
+                      <div style={{ textAlign: 'right' }}>${p.entry.toFixed(2)}</div>
+                      <div style={{ textAlign: 'right', color: p.pnlUsd >= 0 ? 'var(--green)' : 'var(--red)' }}>{p.pnlUsd >= 0 ? '+' : ''}${p.pnlUsd.toFixed(0)} ({p.pnlPct.toFixed(2)}%)</div>
+                      <div style={{ textAlign: 'right', color: 'var(--gold)' }}>{(p.confidence ?? 0).toFixed(2)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </Panel>
         </section>
