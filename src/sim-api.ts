@@ -161,6 +161,34 @@ async function updatePrices() {
 setInterval(updatePrices, 30_000);
 updatePrices();
 
+
+// Mock trading helpers (dev only)
+app.post('/_mock/open', express.json(), (req, res) => {
+  const symbol = String((req.query.symbol || req.body?.symbol || 'ETH')).toUpperCase();
+  const side = String((req.query.side || req.body?.side || 'long')).toLowerCase();
+  const qty = Number(req.query.qty || req.body?.qty || 1);
+  const px = symbol === 'ETH' ? Number(state.ticker?.ETH?.price || 0) : 0;
+  if (!px) return res.status(400).json({ ok: false, error: 'no price yet' });
+
+  const positions = Array.isArray((state as any).positions) ? (state as any).positions : [];
+  const signedQty = side == 'short' ? -Math.abs(qty) : Math.abs(qty);
+
+  // replace existing position for symbol
+  const next = positions.filter((p: any) => p.symbol !== symbol);
+  next.push({ symbol, qty: signedQty, entryPrice: px, openedAt: Date.now() });
+  state = { ...(state as any), positions: next };
+
+  res.json({ ok: true, position: next.find((p: any) => p.symbol === symbol) });
+});
+
+app.post('/_mock/close', express.json(), (req, res) => {
+  const symbol = String((req.query.symbol || req.body?.symbol || 'ETH')).toUpperCase();
+  const positions = Array.isArray((state as any).positions) ? (state as any).positions : [];
+  const next = positions.filter((p: any) => p.symbol !== symbol);
+  state = { ...(state as any), positions: next };
+  res.json({ ok: true });
+});
+
 app.listen(PORT, () => {
   console.log(`sim api listening on ${PORT}`);
 });
