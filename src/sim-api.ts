@@ -1,6 +1,12 @@
 import 'dotenv/config';
 import express from 'express';
 
+async function fetchJson(url: string) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(String(r.status));
+  return r.json();
+}
+
 const app = express();
 app.use(express.json());
 
@@ -76,6 +82,29 @@ app.post('/_update', (req, res) => {
   state = { ...state, ...(req.body || {}) };
   res.json({ ok: true });
 });
+
+
+async function updatePrices() {
+  try {
+    const j: any = await fetchJson('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true');
+    const px = Number(j?.ethereum?.usd || 0);
+    const ch = Number(j?.ethereum?.usd_24h_change || 0);
+    if (Number.isFinite(px) && px > 0) {
+      state = {
+        ...state,
+        ticker: {
+          ...state.ticker,
+          ETH: { price: px, changePct: ch }
+        }
+      };
+    }
+  } catch {
+    // ignore
+  }
+}
+
+setInterval(updatePrices, 10_000);
+updatePrices();
 
 app.listen(PORT, () => {
   console.log(`sim api listening on ${PORT}`);
