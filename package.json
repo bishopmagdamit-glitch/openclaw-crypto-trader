@@ -1,0 +1,27 @@
+{
+  "name": "openclaw-crypto-trader",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "node --watch dist/runner.js",
+    "start": "node dist/runner.js",
+    "hardhat": "hardhat",
+    "compile": "hardhat compile",
+    "deploy:sepolia": "hardhat run --network sepolia scripts/deploy.ts",
+    "test": "hardhat test"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.11.1",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
