@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -28,7 +29,11 @@ type Status = {
 
 async function fetchJSON(path: string) {
   try {
-    const res = await fetch(`/api/sim${path}`, { cache: 'no-store' });
+    const h = await headers();
+    const proto = h.get('x-forwarded-proto') || 'https';
+    const host = h.get('x-forwarded-host') || h.get('host');
+    const base = host ? `${proto}://${host}` : '';
+    const res = await fetch(`${base}/api/sim${path}`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();
   } catch {
