@@ -141,15 +141,15 @@ app.post('/_update', (req, res) => {
 
 async function updatePrices() {
   try {
-    const j: any = await fetchJson('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true');
-    const px = Number(j?.ethereum?.usd || 0);
-    const ch = Number(j?.ethereum?.usd_24h_change || 0);
+    const spot: any = await fetchJson('https://api.coinbase.com/v2/prices/ETH-USD/spot');
+    const px = Number(spot?.data?.amount || 0);
+    // 24h change not provided by this endpoint; keep last changePct as-is
     if (Number.isFinite(px) && px > 0) {
       state = {
         ...state,
         ticker: {
           ...state.ticker,
-          ETH: { price: px, changePct: ch }
+          ETH: { price: px, changePct: state.ticker?.ETH?.changePct ?? 0 }
         }
       };
     }
@@ -158,7 +158,7 @@ async function updatePrices() {
   }
 }
 
-setInterval(updatePrices, 10_000);
+setInterval(updatePrices, 30_000);
 updatePrices();
 
 app.listen(PORT, () => {
