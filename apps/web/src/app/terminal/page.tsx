@@ -219,7 +219,7 @@ export default async function Terminal() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
             <MetricCard
               label="Portfolio Value"
-              value={portfolio ? `$${portfolio.valueUsd.toFixed(0)}` : '—'}
+              value={portfolio && typeof (portfolio as any).valueUsd === 'number' ? `$${(portfolio as any).valueUsd.toFixed(0)}` : '—'}
               sub={portfolio ? `Started at $${portfolio.startedUsd.toFixed(0)}` : '—'}
               color="var(--gold)"
             />
