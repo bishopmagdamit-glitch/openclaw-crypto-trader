@@ -33,6 +33,10 @@ function nowTs() {
   return Date.now();
 }
 
+async function patchStatus(patch: any) {
+  await postJson('/_update', { statusPatch: patch });
+}
+
 async function logFeed(kind: string, msg: string, data?: any) {
   const entry = {
     ts: nowTs(),
@@ -50,6 +54,18 @@ async function cycle() {
   const REBALANCE_DRIFT = Number(cfg.rebalanceDrift ?? 0.07);
   const STOP_LOSS_PCT = Number(cfg.stopLossPct ?? -0.09);
   const MODE = String(cfg.mode || 'steady');
+
+  // pause/step gate
+  const st: any = await getJson('/status');
+  const paused = Boolean(st?.runnerPaused);
+  const stepRequested = Boolean(st?.stepRequested);
+  if (paused && !stepRequested) {
+    await logFeed('hold', 'PAUSED: runner is paused');
+    return;
+  }
+  if (stepRequested) {
+    await patchStatus({ stepRequested: false });
+  }
 
   const ticker: any = await getJson('/ticker');
   const portfolio: any = await getJson('/portfolio');
@@ -82,6 +98,7 @@ async function cycle() {
     // For sell, just close position if overweight (ETH-only simplification)
     if (deltaUsd < 0 && qty !== 0) {
       await postJson('/_mock/close', { symbol: 'ETH' });
+      await patchStatus({ lastAction: 'REBALANCE', runnerPaused: paused });
       await logFeed('rebalance', `REBALANCE: closed ETH to reduce weight (${(ethWeight * 100).toFixed(1)}%→${(TARGET_ETH_WEIGHT * 100).toFixed(0)}%)`, {
         ethWeight,
         target: TARGET_ETH_WEIGHT,
@@ -92,6 +109,7 @@ async function cycle() {
     if (buyUsd > 0) {
       const buyQty = buyUsd / ethPx;
       await postJson('/_mock/open', { symbol: 'ETH', qty: buyQty, side: 'long' });
+      await patchStatus({ lastAction: 'REBALANCE', runnerPaused: paused });
       await logFeed('rebalance', `REBALANCE: bought ${(buyQty).toFixed(3)} ETH toward ${(TARGET_ETH_WEIGHT * 100).toFixed(0)}% target`, {
         buyUsd,
         ethPx,
@@ -105,11 +123,13 @@ async function cycle() {
   // 2) Momentum second
   if (qty !== 0 && pnlPct <= STOP_LOSS_PCT) {
     await postJson('/_mock/close', { symbol: 'ETH' });
+    await patchStatus({ lastAction: 'MOMENTUM', runnerPaused: paused });
     await logFeed('momentum', `MOMENTUM: stop-loss hit (${(pnlPct * 100).toFixed(2)}%), closed ETH`, { pnlPct });
     return;
   }
 
   // simplified: no "buy winners" yet (needs recent window). We'll log HOLD.
+  await patchStatus({ lastAction: 'HOLD', runnerPaused: paused });
   await logFeed('hold', `HOLD: balanced (${(ethWeight * 100).toFixed(1)}%), no stop-loss trigger`, { ethWeight, pnlPct });
 }
 
@@ -129,6 +149,7 @@ async function main() {
     }
     const dt = Date.now() - t0;
     const sleepMs = Math.max(1000, INTERVAL_MS - dt);
+    await patchStatus({ cycleRemainingSec: Math.ceil(sleepMs / 1000) });
     await new Promise((r) => setTimeout(r, sleepMs));
   }
 }
