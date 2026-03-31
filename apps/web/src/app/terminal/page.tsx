@@ -81,9 +81,10 @@ function Topbar({ status }: { status: Status | null }) {
         <HexLogo />
         <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: 2, color: 'var(--gold)' }}>OPENCLAW</div>
         <div style={{ display: 'flex', gap: 8, marginLeft: 14 }}>
-          {['Terminal', 'Research', 'Memory', 'Journal', 'Settings'].map((t) => (
-            <div
+          {['Terminal', 'Agent', 'Research', 'Memory', 'Journal', 'Settings'].map((t) => (
+            <a
               key={t}
+              href={t === 'Agent' ? '/agent' : '/terminal'}
               style={{
                 padding: '6px 14px',
                 borderRadius: 4,
@@ -92,10 +93,11 @@ function Topbar({ status }: { status: Status | null }) {
                 letterSpacing: 0.5,
                 fontWeight: 500,
                 fontSize: 13,
+                textDecoration: 'none',
               }}
             >
               {t}
-            </div>
+            </a>
           ))}
         </div>
       </div>
