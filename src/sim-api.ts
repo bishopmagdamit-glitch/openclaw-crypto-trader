@@ -87,23 +87,11 @@ function computePortfolio() {
   };
 }
 
-app.get('/status', (_req, res) => {
-  const now = Date.now();
-  const remainingMs = Math.max(0, state.cycleEndsAt - now);
-  res.json({
-    ok: true,
-    chain: state.chain,
-    ledger: state.ledger,
-    regime: state.regime,
-    trades: state.trades,
-    cycle: {
-      intervalSec: state.cycleIntervalSec,
-      endsAt: state.cycleEndsAt,
-      remainingSec: Math.floor(remainingMs / 1000),
-    },
-    lastDecision: state.lastDecision,
-  });
+app.get('/status', (req, res) => {
+  const st = (state as any).status || {};
+  res.json({ ok: true, ...st });
 });
+
 
 app.get('/ticker', (_req, res) => res.json({ ok: true, ...state.ticker }));
 app.get('/portfolio', (req, res) => {
@@ -131,10 +119,27 @@ app.get('/positions', (req, res) => {
 });
 
 app.get('/signals', (_req, res) => res.json({ ok: true, ...state.signals }));
-app.get('/feed', (_req, res) => res.json({ ok: true, items: state.feed.slice(-20).reverse() }));
+app.get('/feed', (req, res) => {
+  const feed = Array.isArray((state as any).feed) ? (state as any).feed : [];
+  res.json({ ok: true, items: feed.slice(-50).reverse() });
+});
 
-app.post('/_update', (req, res) => {
-  state = { ...state, ...(req.body || {}) };
+
+app.post('/_update', express.json(), (req, res) => {
+  const body = req.body || {};
+
+  // feedAppend: push one item
+  if (body.feedAppend) {
+    const feed = Array.isArray((state as any).feed) ? (state as any).feed : [];
+    feed.push(body.feedAppend);
+    (state as any).feed = feed.slice(-500);
+  }
+
+  // statusPatch: shallow merge
+  if (body.statusPatch) {
+    (state as any).status = { ...((state as any).status || {}), ...body.statusPatch };
+  }
+
   res.json({ ok: true });
 });
 
