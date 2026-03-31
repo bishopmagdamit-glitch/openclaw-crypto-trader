@@ -54,6 +54,39 @@ let state = {
   ] as { agent: string; color: string; msg: string; ts: string }[],
 };
 
+
+function computePortfolio() {
+  const ethPx = Number(state.ticker?.ETH?.price || 0);
+  const cashUsd = Number((state as any).cashUsd ?? 10_000);
+  const positions = Array.isArray((state as any).positions) ? (state as any).positions : [];
+
+  let exposureUsd = 0;
+  let unrealizedPnlUsd = 0;
+
+  for (const p of positions) {
+    if (p.symbol !== 'ETH') continue;
+    const qty = Number(p.qty || 0);
+    const entry = Number(p.entryPrice || 0);
+    const mark = ethPx || Number(p.markPrice || 0);
+    const pnl = qty * (mark - entry);
+    exposureUsd += qty * mark;
+    unrealizedPnlUsd += pnl;
+  }
+
+  const valueUsd = cashUsd + exposureUsd;
+  const pnlPct = valueUsd > 0 ? (unrealizedPnlUsd / valueUsd) * 100 : 0;
+
+  return {
+    valueUsd,
+    cashUsd,
+    exposureUsd,
+    unrealizedPnlUsd,
+    unrealizedPnlPct: pnlPct,
+    ethPx,
+    positionsCount: positions.length,
+  };
+}
+
 app.get('/status', (_req, res) => {
   const now = Date.now();
   const remainingMs = Math.max(0, state.cycleEndsAt - now);
@@ -73,8 +106,30 @@ app.get('/status', (_req, res) => {
 });
 
 app.get('/ticker', (_req, res) => res.json({ ok: true, ...state.ticker }));
-app.get('/portfolio', (_req, res) => res.json({ ok: true, ...state.portfolio }));
-app.get('/positions', (_req, res) => res.json({ ok: true, positions: state.positions }));
+app.get('/portfolio', (req, res) => {
+  const p = computePortfolio();
+  res.json({ ok: true, ...p });
+});
+
+app.get('/positions', (req, res) => {
+  const ethPx = Number(state.ticker?.ETH?.price || 0);
+  const positions = Array.isArray((state as any).positions) ? (state as any).positions : [];
+  const out = positions.map((p: any) => {
+    const qty = Number(p.qty || 0);
+    const entry = Number(p.entryPrice || 0);
+    const mark = p.symbol === 'ETH' && ethPx ? ethPx : Number(p.markPrice || 0);
+    const pnlUsd = qty * (mark - entry);
+    const pnlPct = entry ? ((mark - entry) / entry) * 100 : 0;
+    return {
+      ...p,
+      markPrice: mark,
+      pnlUsd,
+      pnlPct,
+    };
+  });
+  res.json({ ok: true, positions: out });
+});
+
 app.get('/signals', (_req, res) => res.json({ ok: true, ...state.signals }));
 app.get('/feed', (_req, res) => res.json({ ok: true, items: state.feed.slice(-20).reverse() }));
 
