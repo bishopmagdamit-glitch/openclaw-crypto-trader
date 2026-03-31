@@ -27,9 +27,13 @@ type Status = {
 };
 
 async function fetchJSON(path: string) {
-  const res = await fetch(`/api/sim${path}`, { cache: 'no-store' });
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const res = await fetch(`/api/sim${path}`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
 async function fetchStatus(): Promise<Status | null> {
