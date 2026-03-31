@@ -253,24 +253,24 @@ export default async function Terminal() {
             <MetricCard
               label="Portfolio Value"
               value={portfolio && typeof (portfolio as any).valueUsd === 'number' ? `$${(portfolio as any).valueUsd.toFixed(0)}` : '—'}
-              sub={portfolio ? `Started at $${portfolio.startedUsd.toFixed(0)}` : '—'}
+              sub={portfolio && typeof (portfolio as any).cashUsd === 'number' ? `Cash $${(portfolio as any).cashUsd.toFixed(0)}` : '—'}
               color="var(--gold)"
             />
             <MetricCard
               label="Total P&L"
-              value={portfolio ? `${portfolio.pnlUsd >= 0 ? '+' : ''}$${portfolio.pnlUsd.toFixed(0)}` : '—'}
-              sub={portfolio ? `${portfolio.pnlPct.toFixed(2)}%` : '—'}
+              value={portfolio && typeof (portfolio as any).unrealizedPnlUsd === 'number' ? `${(portfolio as any).unrealizedPnlUsd >= 0 ? '+' : ''}$${(portfolio as any).unrealizedPnlUsd.toFixed(0)}` : '—'}
+              sub={portfolio && typeof (portfolio as any).unrealizedPnlPct === 'number' ? `${(portfolio as any).unrealizedPnlPct.toFixed(2)}%` : '—'}
               color={portfolio ? (portfolio.pnlUsd >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--txt)'}
             />
             <MetricCard
               label="Win Rate"
-              value={portfolio && portfolio.winRate !== null ? `${(portfolio.winRate * 100).toFixed(0)}%` : '—'}
+              value={portfolio && typeof (portfolio as any).exposureUsd === 'number' ? `$${(portfolio as any).exposureUsd.toFixed(0)}` : '—'}
               sub={portfolio ? `${portfolio.wins} wins / ${portfolio.losses} losses` : '—'}
               color="var(--txt)"
             />
             <MetricCard
-              label="Sharpe"
-              value={portfolio && portfolio.sharpe !== null ? portfolio.sharpe.toFixed(2) : '—'}
+              label="Positions"
+              value={portfolio && typeof (portfolio as any).positionsCount === 'number' ? String((portfolio as any).positionsCount) : '—'}
               sub="30-day rolling"
               color="var(--gold)"
             />
@@ -297,9 +297,9 @@ export default async function Terminal() {
                     <div key={p.asset} className="mono" style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.7fr 0.9fr 0.9fr 0.9fr 0.8fr', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
                       <div>{p.asset}</div>
                       <div style={{ color: p.side === 'LONG' ? 'var(--green)' : 'var(--red)' }}>{p.side}</div>
-                      <div style={{ textAlign: 'right' }}>${p.sizeUsd.toFixed(0)}</div>
-                      <div style={{ textAlign: 'right' }}>${p.entry.toFixed(2)}</div>
-                      <div style={{ textAlign: 'right', color: p.pnlUsd >= 0 ? 'var(--green)' : 'var(--red)' }}>{p.pnlUsd >= 0 ? '+' : ''}${p.pnlUsd.toFixed(0)} ({p.pnlPct.toFixed(2)}%)</div>
+                      <div style={{ textAlign: 'right' }}>${Number((p as any).qty || 0) * Number((p as any).markPrice || 0)}`</div>
+                      <div style={{ textAlign: 'right' }}>${Number((p as any).entryPrice || 0).toFixed(2)}</div>
+                      <div style={{ textAlign: 'right', color: (Number((p as any).pnlUsd || 0)) >= 0 ? 'var(--green)' : 'var(--red)' }}>{Number((p as any).pnlUsd || 0) >= 0 ? '+' : ''}${Number((p as any).pnlUsd || 0).toFixed(0)} ({Number((p as any).pnlPct || 0).toFixed(2)}%)</div>
                       <div style={{ textAlign: 'right', color: 'var(--gold)' }}>{(p.confidence ?? 0).toFixed(2)}</div>
                     </div>
                   ))}
@@ -333,7 +333,7 @@ export default async function Terminal() {
                     <div style={{ flex: 1, height: 5, background: 'var(--bg3)', borderRadius: 3, overflow: 'hidden' }}>
                       <div style={{ width: `${x.v}%`, height: '100%', background: x.c }} />
                     </div>
-                    <div className="mono" style={{ width: 32, textAlign: 'right', fontSize: 10, color: 'var(--txt2)' }}>{x.n === 'Funding' ? signals.funding.toFixed(3) : x.n === 'Sentiment' ? signals.sentiment.toFixed(2) : String(signals.fearGreed)}</div>
+                    <div className="mono" style={{ width: 32, textAlign: 'right', fontSize: 10, color: 'var(--txt2)' }}>{!signals ? '—' : x.n === 'Funding' ? Number((signals as any).funding || 0).toFixed(3) : x.n === 'Sentiment' ? Number((signals as any).sentiment || 0).toFixed(2) : String((signals as any).fearGreed ?? '—')}</div>
                   </div>
                 ))}
               </div>
