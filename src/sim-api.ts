@@ -6,7 +6,6 @@ app.use(express.json());
 
 const PORT = Number(process.env.SIM_API_PORT || 8790);
 
-// In-memory state (we'll back with sqlite next)
 let state = {
   chain: 'sepolia',
   ledger: process.env.LEDGER_ADDRESS || null,
@@ -15,6 +14,10 @@ let state = {
   regime: 'NEUTRAL',
   trades: 0,
   lastDecision: 'waiting for first cycle…',
+  ticker: {
+    ETH: { price: 0, changePct: 0 },
+    USDC: { price: 1, changePct: 0 },
+  },
   portfolio: {
     valueUsd: 1000,
     startedUsd: 1000,
@@ -25,7 +28,16 @@ let state = {
     losses: 0,
     sharpe: null as null | number,
   },
-  positions: [] as any[],
+  positions: [] as {
+    asset: string;
+    side: 'LONG' | 'SHORT';
+    sizeUsd: number;
+    entry: number;
+    pnlUsd: number;
+    pnlPct: number;
+    stopLossPct?: number;
+    confidence?: number;
+  }[],
   signals: {
     fearGreed: 62,
     sentiment: 0.72,
@@ -33,7 +45,7 @@ let state = {
   },
   feed: [
     { agent: 'RESEARCH', color: 'blue', msg: 'Waiting for first cycle.', ts: new Date().toISOString() },
-  ],
+  ] as { agent: string; color: string; msg: string; ts: string }[],
 };
 
 app.get('/status', (_req, res) => {
@@ -54,12 +66,12 @@ app.get('/status', (_req, res) => {
   });
 });
 
+app.get('/ticker', (_req, res) => res.json({ ok: true, ...state.ticker }));
 app.get('/portfolio', (_req, res) => res.json({ ok: true, ...state.portfolio }));
 app.get('/positions', (_req, res) => res.json({ ok: true, positions: state.positions }));
 app.get('/signals', (_req, res) => res.json({ ok: true, ...state.signals }));
 app.get('/feed', (_req, res) => res.json({ ok: true, items: state.feed.slice(-20).reverse() }));
 
-// internal endpoint to update (runner will call)
 app.post('/_update', (req, res) => {
   state = { ...state, ...(req.body || {}) };
   res.json({ ok: true });
