@@ -150,12 +150,6 @@ function Ticker({ ticker }: { ticker: Ticker | null }) {
           </div>
         ))}
       </div>
-      <div
-        className="mono"
-        style={{ background: 'var(--bg1)', borderBottom: `1px solid var(--border)`, padding: '6px 16px', fontSize: 10, color: 'var(--txt3)' }}
-      >
-        DEBUG_TICKER: {ticker ? JSON.stringify(ticker) : 'null'}
-      </div>
     </>
   );
 }
