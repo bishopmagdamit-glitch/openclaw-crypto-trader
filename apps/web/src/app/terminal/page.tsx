@@ -324,13 +324,25 @@ export default async function Terminal() {
 
         <section style={{ padding: 16, display: 'grid', gap: 12, alignContent: 'start' }}>
           <Panel title="Agent feed">
-            <div style={{ display: 'grid', gap: 8, maxHeight: 220, overflow: 'hidden' }}>
-              <div style={{ background: 'var(--bg2)', borderRadius: 4, padding: '8px 10px', borderLeft: `3px solid var(--blue)` }}>
-                <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--blue)', marginBottom: 3 }}>RESEARCH</div>
-                <div className="mono" style={{ fontSize: 11, lineHeight: 1.45 }}>Waiting for first cycle.</div>
-                <div className="mono" style={{ fontSize: 10, color: 'var(--txt3)', marginTop: 3 }}>—</div>
+            {feed && Array.isArray((feed as any).items) && (feed as any).items.length > 0 ? (
+              <div style={{ display: 'grid', gap: 8, maxHeight: 260, overflow: 'hidden' }}>
+                {(feed as any).items.slice(0, 6).map((it: any, idx: number) => (
+                  <div key={it.ts || idx} style={{ background: 'var(--bg2)', borderRadius: 4, padding: '8px 10px', borderLeft: `3px solid var(--blue)` }}>
+                    <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--blue)', marginBottom: 3 }}>{String(it.kind || 'RUN').toUpperCase()}</div>
+                    <div className="mono" style={{ fontSize: 11, lineHeight: 1.45 }}>{it.msg || '—'}</div>
+                    <div className="mono" style={{ fontSize: 10, color: 'var(--txt3)', marginTop: 3 }}>{it.ts ? new Date(it.ts).toLocaleString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}</div>
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <div style={{ display: 'grid', gap: 8, maxHeight: 220, overflow: 'hidden' }}>
+                <div style={{ background: 'var(--bg2)', borderRadius: 4, padding: '8px 10px', borderLeft: `3px solid var(--blue)` }}>
+                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--blue)', marginBottom: 3 }}>RESEARCH</div>
+                  <div className="mono" style={{ fontSize: 11, lineHeight: 1.45 }}>Waiting for first cycle.</div>
+                  <div className="mono" style={{ fontSize: 10, color: 'var(--txt3)', marginTop: 3 }}>—</div>
+                </div>
+              </div>
+            )}
           </Panel>
 
           <Panel title="Signals">
