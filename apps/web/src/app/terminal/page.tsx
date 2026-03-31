@@ -108,23 +108,55 @@ function Topbar({ status }: { status: Status | null }) {
         </div>
       </div>
     </div>
+
   );
 }
 
 function Ticker({ ticker }: { ticker: Ticker | null }) {
+  const rows = [
+    {
+      sym: 'ETH',
+      px: ticker?.ETH?.price ? Number(ticker.ETH.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—',
+      ch: ticker?.ETH ? `${Number(ticker.ETH.changePct || 0).toFixed(2)}%` : '—',
+      up: (ticker?.ETH?.changePct ?? 0) >= 0,
+    },
+    {
+      sym: 'USDC',
+      px: ticker?.USDC?.price ? Number(ticker.USDC.price).toFixed(3) : '—',
+      ch: ticker?.USDC ? `${Number(ticker.USDC.changePct || 0).toFixed(2)}%` : '—',
+      up: (ticker?.USDC?.changePct ?? 0) >= 0,
+    },
+  ];
+
   return (
-    <div style={{ height: 34, background: 'var(--bg1)', borderBottom: `1px solid var(--border)`, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 28, overflow: 'hidden' }}>
-      {[
-        { sym: 'ETH', px: '—', ch: '—', up: true },
-        { sym: 'USDC', px: '—', ch: '—', up: true },
-      ].map((x) => (
-        <div key={x.sym} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{ fontSize: 12, fontWeight: 600 }}>{x.sym}</span>
-          <span className="mono" style={{ fontSize: 12 }}>{x.px}</span>
-          <span style={{ fontSize: 11, color: x.up ? 'var(--green)' : 'var(--red)' }}>{x.ch}</span>
-        </div>
-      ))}
-    </div>
+    <>
+      <div
+        style={{
+          height: 34,
+          background: 'var(--bg1)',
+          borderBottom: `1px solid var(--border)`,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 16px',
+          gap: 28,
+          overflow: 'hidden',
+        }}
+      >
+        {rows.map((x) => (
+          <div key={x.sym} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 600 }}>{x.sym}</span>
+            <span className="mono" style={{ fontSize: 12 }}>{x.px}</span>
+            <span style={{ fontSize: 11, color: x.up ? 'var(--green)' : 'var(--red)' }}>{x.ch}</span>
+          </div>
+        ))}
+      </div>
+      <div
+        className="mono"
+        style={{ background: 'var(--bg1)', borderBottom: `1px solid var(--border)`, padding: '6px 16px', fontSize: 10, color: 'var(--txt3)' }}
+      >
+        DEBUG_TICKER: {ticker ? JSON.stringify(ticker) : 'null'}
+      </div>
+    </>
   );
 }
 
@@ -146,6 +178,7 @@ function Statusbar({ status }: { status: Status | null }) {
         LAST DECISION: {status?.lastDecision || '—'}
       </div>
     </div>
+
   );
 }
 
@@ -165,6 +198,7 @@ function MetricCard({ label, value, sub, color }: { label: string; value: string
       <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1, color }}>{value}</div>
       <div className="mono" style={{ fontSize: 10, color: 'var(--txt2)', marginTop: 4 }}>{sub}</div>
     </div>
+
   );
 }
 
