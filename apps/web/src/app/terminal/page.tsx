@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+import { MockTradeButtons } from '../../components/terminal/MockTradeButtons';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
