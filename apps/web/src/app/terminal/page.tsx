@@ -288,20 +288,20 @@ export default async function Terminal() {
               <div className="mono" style={{ fontSize: 11, color: 'var(--txt2)' }}>No positions.</div>
             ) : (
               <div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.7fr 0.9fr 0.9fr 0.9fr 0.8fr', gap: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.0fr 0.8fr 0.9fr 0.9fr 1.1fr 0.8fr', gap: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
                   {['ASSET','SIDE','SIZE','ENTRY','P&L','CONF'].map((h) => (
                     <div key={h} style={{ fontSize: 10, fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--txt3)' }}>{h}</div>
                   ))}
                 </div>
                 <div style={{ display: 'grid', gap: 0 }}>
                   {positions.map((p) => (
-                    <div key={p.asset} className="mono" style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.7fr 0.9fr 0.9fr 0.9fr 0.8fr', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
-                      <div>{p.asset}</div>
-                      <div style={{ color: p.side === 'LONG' ? 'var(--green)' : 'var(--red)' }}>{p.side}</div>
-                      <div style={{ textAlign: 'right' }}>${Number((p as any).qty || 0) * Number((p as any).markPrice || 0)}`</div>
-                      <div style={{ textAlign: 'right' }}>${Number((p as any).entryPrice || 0).toFixed(2)}</div>
+                    <div key={String((p as any).symbol || (p as any).asset)} className="mono" style={{ display: 'grid', gridTemplateColumns: '1.0fr 0.8fr 0.9fr 0.9fr 1.1fr 0.8fr', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
+                      <div>{String((p as any).symbol || (p as any).asset || '—')}</div>
+                      <div style={{ textAlign: 'right' }}>{Number((p as any).qty || 0).toFixed(3)}</div>
+                      <div style={{ textAlign: 'right' }}>${Number((p as any).markPrice || 0).toFixed(2)}</div>
+                      <div style={{ textAlign: 'right' }}>${Number((p as any).markPrice || 0).toFixed(2)}</div>
                       <div style={{ textAlign: 'right', color: (Number((p as any).pnlUsd || 0)) >= 0 ? 'var(--green)' : 'var(--red)' }}>{Number((p as any).pnlUsd || 0) >= 0 ? '+' : ''}${Number((p as any).pnlUsd || 0).toFixed(0)} ({Number((p as any).pnlPct || 0).toFixed(2)}%)</div>
-                      <div style={{ textAlign: 'right', color: 'var(--gold)' }}>{(p.confidence ?? 0).toFixed(2)}</div>
+                      <div style={{ textAlign: 'right' }}>{(p as any).openedAt ? new Date((p as any).openedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</div>
                     </div>
                   ))}
                 </div>
