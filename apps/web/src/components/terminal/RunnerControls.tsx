@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 export function RunnerControls() {
   const [status, setStatus] = useState<any>(null);
   const [cfg, setCfg] = useState<any>(null);
+  const [now, setNow] = useState(Date.now());
 
   async function refresh() {
     const [st, cf] = await Promise.all([
@@ -17,12 +18,18 @@ export function RunnerControls() {
 
   useEffect(() => {
     refresh();
-    const t = setInterval(refresh, 2000);
+    const t = setInterval(refresh, 2500);
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    const k = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(k);
+  }, []);
+
   const paused = Boolean(status?.runnerPaused);
-  const remaining = Number(status?.cycleRemainingSec || 0);
+  const endsAt = Number(status?.cycleEndsAt || 0);
+  const remaining = endsAt ? Math.max(0, Math.ceil((endsAt - now) / 1000)) : Number(status?.cycleRemainingSec || 0);
 
   const prog = useMemo(() => {
     const interval = Number(cfg?.intervalMs || 30000) / 1000;
