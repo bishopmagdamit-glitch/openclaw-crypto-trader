@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
+import fs from 'node:fs';
+import path from 'node:path';
 
 async function fetchJson(url: string) {
   const r = await fetch(url);
@@ -12,7 +14,31 @@ app.use(express.json());
 
 const PORT = Number(process.env.SIM_API_PORT || 8790);
 
+
+const AGENT_CONFIG_PATH = path.join(process.cwd(), 'agent-config.json');
+
+function loadAgentConfig() {
+  try {
+    return JSON.parse(fs.readFileSync(AGENT_CONFIG_PATH, 'utf-8'));
+  } catch {
+    return {
+      mode: 'steady',
+      targetEthWeight: 0.30,
+      rebalanceDrift: 0.07,
+      stopLossPct: -0.09,
+      intervalMs: 30000,
+      soulPreset: 'Calm',
+      instructions: '',
+    };
+  }
+}
+
+function saveAgentConfig(cfg: any) {
+  fs.writeFileSync(AGENT_CONFIG_PATH, JSON.stringify(cfg, null, 2));
+}
+
 let state = {
+  agentConfig: loadAgentConfig(),
   chain: 'sepolia',
   ledger: process.env.LEDGER_ADDRESS || null,
   cycleIntervalSec: Number(process.env.TRADE_INTERVAL_SEC || 300),
@@ -90,6 +116,17 @@ function computePortfolio() {
 app.get('/status', (req, res) => {
   const st = (state as any).status || {};
   res.json({ ok: true, ...st });
+});
+
+app.get('/agent/config', (_req, res) => {
+  res.json({ ok: true, config: (state as any).agentConfig || loadAgentConfig() });
+});
+
+app.post('/agent/config', express.json(), (req, res) => {
+  const next = { ...loadAgentConfig(), ...(req.body || {}) };
+  (state as any).agentConfig = next;
+  saveAgentConfig(next);
+  res.json({ ok: true, config: next });
 });
 
 

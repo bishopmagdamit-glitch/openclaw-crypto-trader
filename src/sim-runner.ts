@@ -3,9 +3,6 @@ import fetch from 'node-fetch';
 const BASE = process.env.SIM_API_BASE || 'http://127.0.0.1:8790';
 const INTERVAL_MS = Number(process.env.SIM_RUNNER_INTERVAL_MS || 30_000);
 
-const TARGET_ETH_WEIGHT = 0.30; // 30%
-const REBALANCE_DRIFT = 0.07; // 7 percentage points
-const STOP_LOSS_PCT = -0.09; // -9%
 
 async function getJson<T>(path: string): Promise<T> {
   const r = await fetch(`${BASE}${path}`, { headers: { 'accept': 'application/json' } });
@@ -47,6 +44,13 @@ async function logFeed(kind: string, msg: string, data?: any) {
 }
 
 async function cycle() {
+  const cfgRes: any = await getJson('/agent/config');
+  const cfg = cfgRes?.config || {};
+  const TARGET_ETH_WEIGHT = Number(cfg.targetEthWeight ?? 0.30);
+  const REBALANCE_DRIFT = Number(cfg.rebalanceDrift ?? 0.07);
+  const STOP_LOSS_PCT = Number(cfg.stopLossPct ?? -0.09);
+  const MODE = String(cfg.mode || 'steady');
+
   const ticker: any = await getJson('/ticker');
   const portfolio: any = await getJson('/portfolio');
   const positionsRes: any = await getJson('/positions');
@@ -110,7 +114,9 @@ async function cycle() {
 }
 
 async function main() {
-  await logFeed('start', `RUNNER START: steady mode (30% ETH target), ${Math.round(INTERVAL_MS / 1000)}s cycle`);
+  const cfgRes: any = await getJson('/agent/config');
+  const cfg = cfgRes?.config || {};
+  await logFeed('start', `RUNNER START: ${String(cfg.mode || 'steady').toUpperCase()} (target ${(Number(cfg.targetEthWeight ?? 0.30) * 100).toFixed(0)}% ETH), ${Math.round(INTERVAL_MS / 1000)}s cycle`);
 
   // loop
   // eslint-disable-next-line no-constant-condition
