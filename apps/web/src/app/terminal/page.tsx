@@ -289,14 +289,26 @@ export default async function Terminal() {
             ) : (
               <div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1.0fr 0.8fr 0.9fr 0.9fr 1.1fr 0.8fr', gap: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
-                  {['ASSET','SIDE','SIZE','ENTRY','P&L','CONF'].map((h) => (
-                    <div key={h} style={{ fontSize: 10, fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--txt3)' }}>{h}</div>
+                  {['ASSET','QTY','ENTRY','MARK','P&L','OPENED'].map((h, i) => (
+                    <div
+                      key={h}
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        letterSpacing: 0.8,
+                        textTransform: 'uppercase',
+                        color: 'var(--txt3)',
+                        textAlign: i === 0 ? 'left' : 'right',
+                      }}
+                    >
+                      {h}
+                    </div>
                   ))}
                 </div>
                 <div style={{ display: 'grid', gap: 0 }}>
                   {positions.map((p) => (
                     <div key={String((p as any).symbol || (p as any).asset)} className="mono" style={{ display: 'grid', gridTemplateColumns: '1.0fr 0.8fr 0.9fr 0.9fr 1.1fr 0.8fr', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
-                      <div>{String((p as any).symbol || (p as any).asset || '—')}</div>
+                      <div style={{ textAlign: 'left' }}>{String((p as any).symbol || (p as any).asset || '—')}</div>
                       <div style={{ textAlign: 'right' }}>{Number((p as any).qty || 0).toFixed(3)}</div>
                       <div style={{ textAlign: 'right' }}>${Number((p as any).markPrice || 0).toFixed(2)}</div>
                       <div style={{ textAlign: 'right' }}>${Number((p as any).markPrice || 0).toFixed(2)}</div>
