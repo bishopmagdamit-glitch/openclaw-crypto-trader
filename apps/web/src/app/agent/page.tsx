@@ -1,9 +1,14 @@
+import { headers } from 'next/headers';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 async function fetchJSON(path: string) {
   try {
-    const res = await fetch(`/api/sim${path}`, { cache: 'no-store' });
+    const h = await headers();
+    const proto = h.get('x-forwarded-proto') || 'https';
+    const host = h.get('x-forwarded-host') || h.get('host');
+    const base = host ? `${proto}://${host}` : '';
+    const res = await fetch(`${base}/api/sim${path}`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -16,7 +21,7 @@ export default async function AgentPage() {
   const cfg = cfgRes?.config || {};
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg0)', color: 'var(--txt1)' }}>
+    <main style={{ minHeight: '100vh', background: 'var(--bg0)', color: 'var(--txt)' }}>
       <div style={{ padding: 16, maxWidth: 920, margin: '0 auto' }}>
         <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--txt3)', marginBottom: 12 }}>Agent Config</div>
 
