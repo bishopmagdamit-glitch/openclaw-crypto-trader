@@ -208,7 +208,8 @@ export default async function Terminal() {
   ]);
 
   const portfolio: Portfolio | null = portfolioRes && portfolioRes.ok ? portfolioRes : null;
-  const feed: FeedItem[] = feedRes && feedRes.ok ? (feedRes.items || []) : [];
+  const feedItems: any[] = feedRes && feedRes.ok ? (feedRes.items || []) : [];
+
   const signals: Signals | null = signalsRes && signalsRes.ok ? signalsRes : null;
   const positions: Position[] = positionsRes && positionsRes.ok ? (positionsRes.positions || []) : [];
   const ticker: Ticker | null = tickerRes && tickerRes.ok ? tickerRes : null;
@@ -324,9 +325,9 @@ export default async function Terminal() {
 
         <section style={{ padding: 16, display: 'grid', gap: 12, alignContent: 'start' }}>
           <Panel title="Agent feed">
-            {feed && Array.isArray((feed as any).items) && (feed as any).items.length > 0 ? (
+            {feedItems.length > 0 ? (
               <div style={{ display: 'grid', gap: 8, maxHeight: 260, overflow: 'hidden' }}>
-                {(feed as any).items.slice(0, 6).map((it: any, idx: number) => (
+                {feedItems.slice(0, 6).map((it: any, idx: number) => (
                   <div key={it.ts || idx} style={{ background: 'var(--bg2)', borderRadius: 4, padding: '8px 10px', borderLeft: `3px solid var(--blue)` }}>
                     <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--blue)', marginBottom: 3 }}>{String(it.kind || 'RUN').toUpperCase()}</div>
                     <div className="mono" style={{ fontSize: 11, lineHeight: 1.45 }}>{it.msg || '—'}</div>
@@ -370,7 +371,7 @@ export default async function Terminal() {
           <Panel title="Memory">
             <div style={{ background: 'var(--bg2)', borderRadius: 4, padding: '8px 10px' }}>
               <div style={{ display: 'inline-block', padding: '1px 6px', borderRadius: 3, fontSize: 9, fontWeight: 600, letterSpacing: 0.5, background: 'var(--goldfade)', color: 'var(--gold)', marginBottom: 4 }}>LESSON</div>
-              <div className="mono" style={{ fontSize: 10, color: 'var(--txt2)', lineHeight: 1.5 }}>Awaiting first trade cycle.</div>
+              <div className="mono" style={{ fontSize: 10, color: 'var(--txt2)', lineHeight: 1.5 }}>Runner live. Watching ETH + portfolio.</div>
             </div>
           </Panel>
         </section>
