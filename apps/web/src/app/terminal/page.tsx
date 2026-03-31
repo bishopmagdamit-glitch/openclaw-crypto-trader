@@ -1,3 +1,18 @@
+type Portfolio = {
+  valueUsd: number;
+  startedUsd: number;
+  pnlUsd: number;
+  pnlPct: number;
+  wins: number;
+  losses: number;
+  winRate: number | null;
+  sharpe: number | null;
+};
+
+type FeedItem = { agent: string; color: string; msg: string; ts: string };
+type Signals = { fearGreed: number; sentiment: number; funding: number };
+type Position = { asset: string; side: 'LONG' | 'SHORT'; sizeUsd: number; entry: number; pnlUsd: number; pnlPct: number; stopLossPct?: number; confidence?: number };
+
 type Status = {
   lastDecision?: string;
   cycle?: { remainingSec?: number };
@@ -5,6 +20,14 @@ type Status = {
   ledger?: string | null;
   trades?: number;
 };
+
+async function fetchJSON(path: string) {
+  const base = process.env.NEXT_PUBLIC_SIM_API_BASE;
+  if (!base) return null;
+  const res = await fetch(`${base}${path}`, { cache: 'no-store' });
+  if (!res.ok) return null;
+  return res.json();
+}
 
 async function fetchStatus(): Promise<Status | null> {
   const base = process.env.NEXT_PUBLIC_SIM_API_BASE;
@@ -134,7 +157,19 @@ function MetricCard({ label, value, sub, color }: { label: string; value: string
 }
 
 export default async function Terminal() {
-  const status = await fetchStatus();
+  const [status, portfolioRes, feedRes, signalsRes, positionsRes] = await Promise.all([
+    fetchStatus(),
+    fetchJSON('/portfolio'),
+    fetchJSON('/feed'),
+    fetchJSON('/signals'),
+    fetchJSON('/positions'),
+  ]);
+
+  const portfolio: Portfolio | null = portfolioRes && portfolioRes.ok ? portfolioRes : null;
+  const feed: FeedItem[] = feedRes && feedRes.ok ? (feedRes.items || []) : [];
+  const signals: Signals | null = signalsRes && signalsRes.ok ? signalsRes : null;
+  const positions: Position[] = positionsRes && positionsRes.ok ? (positionsRes.positions || []) : [];
+
 
   return (
     <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -173,10 +208,30 @@ export default async function Terminal() {
 
         <section style={{ padding: 16, display: 'grid', gap: 12, alignContent: 'start' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
-            <MetricCard label="Portfolio Value" value="$1,000" sub="Started at $1,000" color="var(--gold)" />
-            <MetricCard label="Total P&L" value="+$0" sub="0.00%" color="var(--green)" />
-            <MetricCard label="Win Rate" value="—" sub="0 wins / 0 losses" color="var(--txt)" />
-            <MetricCard label="Sharpe" value="—" sub="30-day rolling" color="var(--gold)" />
+            <MetricCard
+              label="Portfolio Value"
+              value={portfolio ? `$${portfolio.valueUsd.toFixed(0)}` : '—'}
+              sub={portfolio ? `Started at $${portfolio.startedUsd.toFixed(0)}` : '—'}
+              color="var(--gold)"
+            />
+            <MetricCard
+              label="Total P&L"
+              value={portfolio ? `${portfolio.pnlUsd >= 0 ? '+' : ''}$${portfolio.pnlUsd.toFixed(0)}` : '—'}
+              sub={portfolio ? `${portfolio.pnlPct.toFixed(2)}%` : '—'}
+              color={portfolio ? (portfolio.pnlUsd >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--txt)'}
+            />
+            <MetricCard
+              label="Win Rate"
+              value={portfolio && portfolio.winRate !== null ? `${(portfolio.winRate * 100).toFixed(0)}%` : '—'}
+              sub={portfolio ? `${portfolio.wins} wins / ${portfolio.losses} losses` : '—'}
+              color="var(--txt)"
+            />
+            <MetricCard
+              label="Sharpe"
+              value={portfolio && portfolio.sharpe !== null ? portfolio.sharpe.toFixed(2) : '—'}
+              sub="30-day rolling"
+              color="var(--gold)"
+            />
           </div>
 
           <Panel title="Portfolio">
@@ -186,13 +241,17 @@ export default async function Terminal() {
           </Panel>
 
           <Panel title="Positions">
-            <div className="mono" style={{ fontSize: 11, color: 'var(--txt2)' }}>No positions.</div>
+            {positions.length === 0 ? (
+              <div className="mono" style={{ fontSize: 11, color: 'var(--txt2)' }}>No positions.</div>
+            ) : (
+              <div className="mono" style={{ fontSize: 11, color: 'var(--txt)' }}>Positions table next.</div>
+            )}
           </Panel>
         </section>
 
         <section style={{ padding: 16, display: 'grid', gap: 12, alignContent: 'start' }}>
           <Panel title="Agent feed">
-            <div style={{ display: 'grid', gap: 8 }}>
+            <div style={{ display: 'grid', gap: 8, maxHeight: 220, overflow: 'hidden' }}>
               <div style={{ background: 'var(--bg2)', borderRadius: 4, padding: '8px 10px', borderLeft: `3px solid var(--blue)` }}>
                 <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--blue)', marginBottom: 3 }}>RESEARCH</div>
                 <div className="mono" style={{ fontSize: 11, lineHeight: 1.45 }}>Waiting for first cycle.</div>
@@ -202,7 +261,25 @@ export default async function Terminal() {
           </Panel>
 
           <Panel title="Signals">
-            <div className="mono" style={{ fontSize: 10, color: 'var(--txt3)' }}>wired next</div>
+            {signals ? (
+              <div>
+                {[
+                  { n: 'Fear&Greed', v: signals.fearGreed, c: 'var(--gold)' },
+                  { n: 'Sentiment', v: Math.round(signals.sentiment * 100), c: 'var(--green)' },
+                  { n: 'Funding', v: Math.min(100, Math.max(0, Math.round((signals.funding + 0.05) * 1000))), c: 'var(--gold)' },
+                ].map((x) => (
+                  <div key={x.n} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                    <div style={{ width: 90, flexShrink: 0, fontSize: 11, color: 'var(--txt2)' }}>{x.n}</div>
+                    <div style={{ flex: 1, height: 5, background: 'var(--bg3)', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ width: `${x.v}%`, height: '100%', background: x.c }} />
+                    </div>
+                    <div className="mono" style={{ width: 32, textAlign: 'right', fontSize: 10, color: 'var(--txt2)' }}>{x.n === 'Funding' ? signals.funding.toFixed(3) : x.n === 'Sentiment' ? signals.sentiment.toFixed(2) : String(signals.fearGreed)}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mono" style={{ fontSize: 10, color: 'var(--txt3)' }}>No signals.</div>
+            )}
           </Panel>
 
           <Panel title="Memory">
