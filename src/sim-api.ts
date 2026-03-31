@@ -229,11 +229,16 @@ app.post('/_mock/open', express.json(), (req, res) => {
 
   const positions = Array.isArray((state as any).positions) ? (state as any).positions : [];
   const signedQty = side == 'short' ? -Math.abs(qty) : Math.abs(qty);
+  const cashUsd = Number((state as any).cashUsd ?? 10_000);
+  const costUsd = Math.abs(signedQty) * px;
 
   // replace existing position for symbol
   const next = positions.filter((p: any) => p.symbol !== symbol);
   next.push({ symbol, qty: signedQty, entryPrice: px, openedAt: Date.now() });
-  state = { ...(state as any), positions: next };
+
+  // naive cash accounting (long only): subtract cost on open
+  const nextCash = side === 'short' ? cashUsd : Math.max(0, cashUsd - costUsd);
+  state = { ...(state as any), positions: next, cashUsd: nextCash };
 
   res.json({ ok: true, position: next.find((p: any) => p.symbol === symbol) });
 });
@@ -241,8 +246,15 @@ app.post('/_mock/open', express.json(), (req, res) => {
 app.post('/_mock/close', express.json(), (req, res) => {
   const symbol = String((req.query.symbol || req.body?.symbol || 'ETH')).toUpperCase();
   const positions = Array.isArray((state as any).positions) ? (state as any).positions : [];
+  const cashUsd = Number((state as any).cashUsd ?? 10_000);
+  const pos = positions.find((p: any) => p.symbol === symbol);
+  const ethPx = Number(state.ticker?.ETH?.price || 0);
+  const mark = symbol === 'ETH' && ethPx ? ethPx : Number(pos?.markPrice || 0);
+  const qty = Number(pos?.qty || 0);
+  const creditUsd = Math.abs(qty) * mark;
+
   const next = positions.filter((p: any) => p.symbol !== symbol);
-  state = { ...(state as any), positions: next };
+  state = { ...(state as any), positions: next, cashUsd: cashUsd + creditUsd };
   res.json({ ok: true });
 });
 

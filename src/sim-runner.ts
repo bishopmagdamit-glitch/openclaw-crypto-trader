@@ -149,7 +149,7 @@ async function main() {
     }
     const dt = Date.now() - t0;
     const sleepMs = Math.max(1000, INTERVAL_MS - dt);
-    await patchStatus({ cycleRemainingSec: Math.ceil(sleepMs / 1000) });
+    await patchStatus({ cycleRemainingSec: Math.ceil(sleepMs / 1000), cycleIntervalSec: Math.round(INTERVAL_MS/1000), cycleEndsAt: Date.now() + sleepMs });
     await new Promise((r) => setTimeout(r, sleepMs));
   }
 }
