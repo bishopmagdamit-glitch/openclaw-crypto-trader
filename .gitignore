@@ -4,3 +4,7 @@ dist
 artifacts
 cache
 *.sqlite
+# Next build artifacts
+apps/web/.next/
+apps/web/out/
+apps/web/.vercel/
