@@ -129,6 +129,21 @@ app.post('/agent/config', express.json(), (req, res) => {
   res.json({ ok: true, config: next });
 });
 
+app.post('/runner/pause', (_req, res) => {
+  (state as any).status = { ...((state as any).status || {}), runnerPaused: true };
+  res.json({ ok: true });
+});
+
+app.post('/runner/resume', (_req, res) => {
+  (state as any).status = { ...((state as any).status || {}), runnerPaused: false };
+  res.json({ ok: true });
+});
+
+app.post('/runner/step', (_req, res) => {
+  (state as any).status = { ...((state as any).status || {}), stepRequested: true };
+  res.json({ ok: true });
+});
+
 
 app.get('/ticker', (_req, res) => res.json({ ok: true, ...state.ticker }));
 app.get('/portfolio', (req, res) => {
