@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+import { RunnerControls } from '../../components/terminal/RunnerControls';
 import { MockTradeButtons } from '../../components/terminal/MockTradeButtons';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -77,7 +78,7 @@ function Topbar({ status }: { status: Status | null }) {
         justifyContent: 'space-between',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><RunnerControls />
         <HexLogo />
         <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: 2, color: 'var(--gold)' }}>OPENCLAW</div>
         <div style={{ display: 'flex', gap: 8, marginLeft: 14 }}>
@@ -101,7 +102,7 @@ function Topbar({ status }: { status: Status | null }) {
           ))}
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><RunnerControls />
         <div style={{ padding: '3px 10px', borderRadius: 12, background: 'var(--goldfade)', color: 'var(--gold)', fontWeight: 600, fontSize: 10, letterSpacing: 0.5 }}>
           NEUTRAL
         </div>
