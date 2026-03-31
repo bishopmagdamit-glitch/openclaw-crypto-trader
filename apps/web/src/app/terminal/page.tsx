@@ -27,9 +27,7 @@ type Status = {
 };
 
 async function fetchJSON(path: string) {
-  const base = process.env.NEXT_PUBLIC_SIM_API_BASE;
-  if (!base) return null;
-  const res = await fetch(`${base}${path}`, { cache: 'no-store' });
+  const res = await fetch(`/api/sim${path}`, { cache: 'no-store' });
   if (!res.ok) return null;
   return res.json();
 }
